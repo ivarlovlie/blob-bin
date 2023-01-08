@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        form {
+            width: 100%;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        #forms {
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        #forms summary {
+            width: 300px;
+            cursor: pointer;
+        }
+    </style>
+    <title>Blobbin</title>
+</head>
+<body>
+<h1>Blobbin</h1>
+<p>This is a web service you can upload files and texts to.</p>
+<main id="forms">
+    <details>
+        <summary>Upload a file</summary>
+        <form action="/upload" method="post">
+            <input type="file" id="file" name="files" required>
+            <label for="file-password">Password (optional)</label>
+            <input type="password" name="password" id="file-password">
+            <label for="file-auto-delete">
+                Automatically delete after (optional)
+                <span class="label-description"
+                      title="blank=never, <number><unit>, unit can be d=day,w=week,h=hour,m=minute">?</span>
+            </label>
+            <input type="text"
+                   id="file-auto-delete"
+            name="autoDeleteAfter">
+            <label for="file-singleton">
+                <input type="checkbox" name="singleton" id="file-singleton">
+                Delete after first open</label>
+            <input type="submit">
+        </form>
+    </details>
+    <details>
+        <summary>Upload some text</summary>
+        <form action="/text" method="post">
+            <textarea id="text" name="text" required></textarea>
+            <label for="text-password">Mimetype (default: text/plain)</label>
+            <input type="password" name="mime" id="text-mimetype">
+            <label for="text-password">Password (optional)</label>
+            <input type="password" name="password" id="text-password">
+            <label for="text-auto-delete">
+                Automatically delete after (optional)
+                <span class="label-description"
+                      title="blank=never, <number><unit>, unit can be d=day,w=week,h=hour,m=minute">?</span>
+            </label>
+            <input type="text"
+                   id="text-auto-delete"
+                   name="autoDeleteAfter">
+            <label for="text-singleton">
+                <input type="checkbox" id="text-singleton" name="singleton">
+                Delete after first open</label>
+            <input type="submit">
+        </form>
+    </details>
+</main>
+</body>
+</html>
