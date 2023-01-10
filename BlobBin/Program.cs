@@ -1,25 +1,33 @@
-var builder = WebApplication.CreateBuilder(args);
+global using BlobBin;
+using Microsoft.EntityFrameworkCore;
+using File = BlobBin.File;
 
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<DB>(opt => opt.UseSqlite("data source=main.db"));
 var app = builder.Build();
 
 app.UseFileServer();
 app.UseStatusCodePages();
-app.MapPost("/upload", Upload);
+app.MapGet("/upload-link", GetUploadLink);
+app.MapPost("/upload/{id}", GetUploadLink);
 app.MapPost("/text", UploadText);
 app.MapGet("/b/{id}", GetBlob);
 app.Run();
 
-IResult Upload(HttpContext context) {
-    var request = new UploadRequest() {
-        Singleton = context.Request.Form["singleton"] == "on",
-        File = context.Request.Form.Files.FirstOrDefault(),
-        Password = context.Request.Form["password"],
-        AutoDeleteAfter = context.Request.Form["autoDeleteAfter"]
+IResult GetUploadLink(HttpContext context, DB db) {
+    var file = new File {
+        CreatedBy = context.Request.Headers["X-Forwarded-For"].ToString()
     };
+    db.Files.Add(file);
+    db.SaveChanges();
+    return Results.Ok(context.Request.Host.Value + "/upload/" + file.Id);
+}
+
+IResult Upload(HttpContext context, DB db) {
     return Results.Ok();
 }
 
-IResult UploadText(PasteRequest request) {
+IResult UploadText(HttpContext context, DB db) {
     return Results.Ok();
 }
 
