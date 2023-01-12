@@ -35,7 +35,7 @@
 <main id="forms">
     <details>
         <summary>Upload a file</summary>
-        <form action="/upload" method="post">
+        <form action="/upload" enctype="multipart/form-data" method="post">
             <input type="file" id="file" name="files" required>
             <label for="file-password">Password (optional)</label>
             <input type="password" name="password" id="file-password">

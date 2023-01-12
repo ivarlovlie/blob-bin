@@ -18,6 +18,7 @@ public class UploadEntityBase
     }
 
     public Guid Id { get; set; }
+    public string PublicId { get; set; }
     public DateTime CreatedAt { get; set; }
     public string CreatedBy { get; set; }
     public DateTime? DeletedAt { get; set; }
