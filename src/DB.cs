@@ -11,6 +11,7 @@ public sealed class DB : DbContext
             _created = true;
             Database.EnsureDeleted();
             Database.EnsureCreated();
+            Util.GetFilesDirectoryPath(true);
         }
     }
 
@@ -18,7 +19,7 @@ public sealed class DB : DbContext
     public DbSet<Paste> Pastes { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-        optionsBuilder.UseSqlite("data source = main.db");
+        optionsBuilder.UseSqlite("data source = AppData/main.db");
         base.OnConfiguring(optionsBuilder);
     }
 }

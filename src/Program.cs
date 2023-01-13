@@ -13,6 +13,7 @@ app.MapPost("/upload/{id}", UploadBig);
 app.MapPost("/upload", UploadSimple);
 app.MapPost("/text", UploadText);
 app.MapGet("/b/{id}", GetBlob);
+Util.GetFilesDirectoryPath(true);
 app.Run();
 
 IResult GetUploadLink(HttpContext context, DB db) {
@@ -47,9 +48,8 @@ async Task<IResult> UploadSimple(HttpContext context, DB db) {
         file.PasswordHash = PasswordHelper.HashPassword(context.Request.Form["password"]);
     }
 
-
     await using var write = System.IO.File.OpenWrite(
-        Path.Combine(GetFilesDirectoryPath(), file.Id.ToString())
+        Path.Combine(Util.GetFilesDirectoryPath(), file.Id.ToString())
     );
     await context.Request.Form.Files[0].CopyToAsync(write);
     db.Files.Add(file);
@@ -74,21 +74,12 @@ async Task<IResult> GetBlob(string id, DB db) {
     if (file == default) return Results.NotFound();
     var reader = await System.IO.File.ReadAllBytesAsync(
         Path.Combine(
-            GetFilesDirectoryPath(), file.Id.ToString()
+            Util.GetFilesDirectoryPath(), file.Id.ToString()
         )
     );
     return Results.File(reader, file.MimeType, file.Name);
 }
 
-string GetFilesDirectoryPath() {
-    var filesDirectoryPath = Path.Combine(
-        Directory.GetCurrentDirectory(),
-        "AppData",
-        "files"
-    );
-    Directory.CreateDirectory(filesDirectoryPath);
-    return filesDirectoryPath;
-}
 
 string GetUnusedBlobId(DB db) {
     string id() => RandomString.Generate(3);
