@@ -5,7 +5,7 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY ["src/BlobBin.csproj", "."]
+COPY ["BlobBin.csproj", "."]
 RUN dotnet restore "BlobBin.csproj"
 COPY . .
 WORKDIR "/src/BlobBin"
