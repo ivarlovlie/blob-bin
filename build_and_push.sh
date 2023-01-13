@@ -14,7 +14,7 @@ else
   OLD_VERSION=$CURRENT_VERSION
 fi
 IMAGE_NAME="blob-bin/server"
-HUB_NAME="dr.ivar.systems/blob-in/server"
+HUB_NAME="dr.ivar.systems/blob-bin/server"
 
 # Check for uncommited changes and optionally commit them
 if [ "$(git status --untracked-files=no --porcelain)" ]; then

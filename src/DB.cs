@@ -4,8 +4,6 @@ namespace BlobBin;
 
 public sealed class DB : DbContext
 {
-    private bool _created;
-
     public DB(DbContextOptions<DB> options) : base(options) {
         Database.Migrate();
     }
