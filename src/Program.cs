@@ -1,9 +1,11 @@
 global using BlobBin;
 using IOL.Helpers;
+using Microsoft.AspNetCore.Http.Features;
 using File = BlobBin.File;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DB>();
+builder.Services.Configure<FormOptions>(o => { o.MultipartBodyLengthLimit = 10000000; });
 var app = builder.Build();
 
 app.UseFileServer();
