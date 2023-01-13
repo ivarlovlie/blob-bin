@@ -7,12 +7,7 @@ public sealed class DB : DbContext
     private bool _created;
 
     public DB(DbContextOptions<DB> options) : base(options) {
-        if (!_created) {
-            _created = true;
-            Database.EnsureDeleted();
-            Database.EnsureCreated();
-            Util.GetFilesDirectoryPath(true);
-        }
+        Database.Migrate();
     }
 
     public DbSet<File> Files { get; set; }
