@@ -92,7 +92,7 @@ string GetFilesDirectoryPath() {
 }
 
 string GetUnusedBlobId(DB db) {
-    string id() => RandomString.Generate(5);
+    string id() => RandomString.Generate(3);
     var res = id();
     while (db.Files.Any(c => c.PublicId == res)) {
         res = id();
