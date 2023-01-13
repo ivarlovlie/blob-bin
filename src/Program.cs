@@ -1,10 +1,9 @@
 global using BlobBin;
 using IOL.Helpers;
-using Microsoft.EntityFrameworkCore;
 using File = BlobBin.File;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<DB>(opt => opt.UseSqlite("data source=main.db"));
+builder.Services.AddDbContext<DB>();
 var app = builder.Build();
 
 app.UseFileServer();

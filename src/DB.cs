@@ -2,12 +2,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BlobBin;
 
-public class DB : DbContext
+public sealed class DB : DbContext
 {
-    public DB(DbContextOptions<DB> options) : base(options) { }
+    private bool _created;
+
+    public DB(DbContextOptions<DB> options) : base(options) {
+        if (!_created) {
+            _created = true;
+            Database.EnsureDeleted();
+            Database.EnsureCreated();
+        }
+    }
 
     public DbSet<File> Files { get; set; }
     public DbSet<Paste> Pastes { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+        optionsBuilder.UseSqlite("data source = main.db");
+        base.OnConfiguring(optionsBuilder);
+    }
 }
 
 public class UploadEntityBase
