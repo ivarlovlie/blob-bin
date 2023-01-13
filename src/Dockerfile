@@ -8,7 +8,7 @@ WORKDIR /src
 COPY ["BlobBin.csproj", "."]
 RUN dotnet restore "BlobBin.csproj"
 COPY . .
-WORKDIR "/src/BlobBin"
+WORKDIR "."
 RUN dotnet build "BlobBin.csproj" -c Release -o /app/build
 
 FROM build AS publish
