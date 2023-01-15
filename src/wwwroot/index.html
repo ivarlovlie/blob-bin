@@ -2,85 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <style>
-        body {
-            font-family: sans-serif;
-        }
-
-        form {
-            width: 100%;
-            max-width: 300px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        #forms {
-            display: flex;
-            flex-direction: row;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        #forms .wrapper {
-            width: 300px;
-            cursor: pointer;
-        }
-
-        textarea {
-            overflow-y: hidden;
-            min-height: calc(1.5em + .75rem + 2px);
-            resize: vertical;
-        }
-
-        .btn {
-            padding: 4px 12px;
-            min-width: 88px;
-            border: none;
-            font: inherit;
-            color: #373030;
-            border-radius: 4px;
-            outline: none;
-            text-decoration: none;
-            cursor: default;
-            font-weight: 400;
-            background: #fff;
-            box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.3), 0px 1px 1px rgba(0, 0, 0, 0.4);
-        }
-
-        .btn:active {
-            background: linear-gradient(#4faefc, #006bff);
-            color: #fff;
-            position: relative;
-        }
-
-        .btn.btn-blue {
-            color: #fff;
-            background: linear-gradient(#81c5fd, #3389ff);
-        }
-
-        .btn.btn-blue:active {
-            background: linear-gradient(#4faefc, #006bff);
-        }
-
-        .btn.btn-red {
-            color: #fff;
-            background: linear-gradient(#fd6c6f, #e70307);
-        }
-
-        .btn.btn-red:active {
-            background: linear-gradient(#fc2125, #b50206);
-        }
-
-        .btn.btn-green {
-            color: #fff;
-            background: linear-gradient(#89e36b, #44ae21);
-        }
-
-        .btn.btn-green:active {
-            background: linear-gradient(#56d72b, #338319);
-        }
-    </style>
+    <link rel="stylesheet" href="/index.css">
     <title>Blobbin</title>
 </head>
 <body>
@@ -89,7 +11,7 @@
 <main id="forms">
     <div class="wrapper">
         <h2>Upload a file</h2>
-        <form action="/upload" enctype="multipart/form-data" id="file-form" method="post" autocomplete="off"
+        <form action="/file" enctype="multipart/form-data" id="file-form" method="post" autocomplete="off"
               autocapitalize="off">
             <input type="file" maxlength="104857600" id="file" name="files" required>
             <label for="file-password">Password (optional)</label>
@@ -97,7 +19,7 @@
             <label for="file-auto-delete">
                 Automatically delete after (optional)
                 <span class="label-description"
-                      title="blank=never, <number><unit>, unit can be d=day,w=week,h=hour,m=minute">?</span>
+                      title="<number><unit>, Unit can be seconds(s,second), minutes(m,minute), hours(h,hour), days(d,day), weeks(w,week), years(y,year). Number can be non-negative whole number">?</span>
             </label>
             <input type="text"
                    id="file-auto-delete"
@@ -111,7 +33,7 @@
     <div class="wrapper">
         <h2>Upload some text</h2>
         <form action="/text" method="post" id="text-form" autocomplete="off" autocapitalize="off">
-            <textarea id="text" name="text" required></textarea>
+            <textarea id="text" name="content" required></textarea>
             <label for="text-password">Mimetype (default: text/plain)</label>
             <input type="password" name="mime" id="text-mimetype">
             <label for="text-password">Password (optional)</label>
@@ -119,7 +41,7 @@
             <label for="text-auto-delete">
                 Automatically delete after (optional)
                 <span class="label-description"
-                      title="blank=never, <number><unit>, unit can be d=day,w=week,h=hour,m=minute">?</span>
+                      title="<number><unit>, Unit can be seconds(s,second), minutes(m,minute), hours(h,hour), days(d,day), weeks(w,week), years(y,year). Number can be non-negative whole number">?</span>
             </label>
             <input type="text"
                    id="text-auto-delete"

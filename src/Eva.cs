@@ -2,10 +2,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BlobBin;
 
-public sealed class DB : DbContext
+public sealed class Eva : DbContext
 {
-    public DB(DbContextOptions<DB> options) : base(options) {
-        Database.Migrate();
+    private readonly bool migrated;
+
+    public Eva(DbContextOptions<Eva> options) : base(options) {
+        if (!migrated) {
+            Database.Migrate();
+            migrated = true;
+        }
     }
 
     public DbSet<File> Files { get; set; }
@@ -33,17 +38,15 @@ public class UploadEntityBase
     public bool Singleton { get; set; }
     public string? AutoDeleteAfter { get; set; }
     public string? MimeType { get; set; }
-}
-
-public class File : UploadEntityBase
-{
+    public string DeletionKey { get; set; }
     public string? Name { get; set; }
     public long Length { get; set; }
 }
 
 public class Paste : UploadEntityBase
 {
-    public string? Name { get; set; }
     public string? Content { get; set; }
-    public long Length { get; set; }
 }
+
+public class File : UploadEntityBase
+{ }

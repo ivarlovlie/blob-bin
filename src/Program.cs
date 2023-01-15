@@ -1,24 +1,76 @@
 global using BlobBin;
+using System.Text;
+using System.Text.Json;
 using IOL.Helpers;
-using Microsoft.AspNetCore.Http.Features;
 using File = BlobBin.File;
 
+const long MAX_REQUEST_BODY_SIZE = 104_857_600;
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<DB>();
-builder.WebHost.UseKestrel(o => { o.Limits.MaxRequestBodySize = 100_000_000; });
+builder.Services.AddDbContext<Eva>();
+builder.Services.AddHostedService<WallE>();
+builder.WebHost.UseKestrel(o => { o.Limits.MaxRequestBodySize = MAX_REQUEST_BODY_SIZE; });
 var app = builder.Build();
-
 app.UseFileServer();
 app.UseStatusCodePages();
-app.MapGet("/upload-link", GetUploadLink);
-app.MapPost("/upload/{id}", UploadBig);
-app.MapPost("/upload", UploadSimple);
+app.MapGet("/upload-link", GetFileUploadLink);
+app.MapPost("/file/{id}", UploadFilePart);
+app.MapPost("/file", UploadFile);
 app.MapPost("/text", UploadText);
-app.MapGet("/b/{id}", GetBlob);
-Util.GetFilesDirectoryPath(true);
+app.MapGet("/b/{id}/delete", DeleteUpload);
+app.MapGet("/p/{id}/delete", DeleteUpload);
+app.MapPost("/b/{id}", GetFile);
+app.MapGet("/b/{id}", GetFile);
+app.MapGet("/p/{id}", GetPaste);
+app.MapPost("/p/{id}", GetPaste);
+Tools.GetFilesDirectoryPath(true);
 app.Run();
 
-IResult GetUploadLink(HttpContext context, DB db) {
+IResult DeleteUpload(HttpContext context, Eva db, string id, string key = default, bool confirmed = false) {
+    if (key.IsNullOrWhiteSpace()) {
+        return Results.BadRequest("No key was found");
+    }
+
+    var isPaste = context.Request.Path.StartsWithSegments("/p");
+    UploadEntityBase? upload = isPaste
+        ? db.Pastes.FirstOrDefault(c => c.PublicId == id)
+        : db.Files.FirstOrDefault(c => c.PublicId == id);
+
+    if (upload is not {DeletedAt: null}) {
+        return Results.NotFound();
+    }
+
+    if (upload.DeletionKey != key) {
+        return Results.Text("Invalid key", default, default, 400);
+    }
+
+    if (!confirmed) {
+        return Results.Content($"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/index.css">
+    <title>{upload.PublicId} - Confirm deletion - Blobbin</title>
+</head>
+<body>
+    <p>Are you sure you want to delete {upload.Name}?</p>
+    <a href="/{context.Request.Path.ToString()}&confirmed=true">Yes</a>
+    <span>  </span>
+    <a href="/">No, cancel</a>
+</body>
+</html>
+""", "text/html");
+    }
+
+    upload.DeletedAt = DateTime.UtcNow;
+    db.SaveChanges();
+
+    return Results.Text("""
+The file is marked for deletion and cannot be accessed any more, all traces off it will be gone from our systems within 7 days. 
+""");
+}
+
+IResult GetFileUploadLink(HttpContext context, Eva db) {
     var file = new File {
         CreatedBy = context.Request.Headers["X-Forwarded-For"].ToString()
     };
@@ -31,7 +83,7 @@ IResult GetUploadLink(HttpContext context, DB db) {
     );
 }
 
-async Task<IResult> UploadSimple(HttpContext context, DB db) {
+async Task<IResult> UploadFile(HttpContext context, Eva db) {
     if (!context.Request.Form.Files.Any()) {
         return Results.BadRequest("No files was found in request");
     }
@@ -43,7 +95,8 @@ async Task<IResult> UploadSimple(HttpContext context, DB db) {
         Length = context.Request.Form.Files[0].Length,
         Name = context.Request.Form.Files[0].FileName,
         MimeType = context.Request.Form.Files[0].ContentType,
-        PublicId = GetUnusedBlobId(db)
+        PublicId = GetUnusedPublicFileId(db),
+        DeletionKey = RandomString.Generate(6),
     };
 
     if (context.Request.Form["password"].ToString().HasValue()) {
@@ -51,39 +104,164 @@ async Task<IResult> UploadSimple(HttpContext context, DB db) {
     }
 
     await using var write = System.IO.File.OpenWrite(
-        Path.Combine(Util.GetFilesDirectoryPath(), file.Id.ToString())
+        Path.Combine(Tools.GetFilesDirectoryPath(), file.Id.ToString())
     );
     await context.Request.Form.Files[0].CopyToAsync(write);
     db.Files.Add(file);
     db.SaveChanges();
-    return Results.Text(
-        context.Request.GetRequestHost()
-        + "/b/"
-        + file.PublicId
-    );
+    var deletionNote = "The file is only deleted when you request it.";
+    if (file.AutoDeleteAfter.HasValue()) {
+        var relativeDateTime = file.CreatedAt.Add(Tools.ParseHumanTimeSpan(file.AutoDeleteAfter));
+        deletionNote = $"The file will be automatically deleted at {relativeDateTime:u}";
+    }
+
+    return Results.Text($"""
+Your file is available here: {context.Request.GetRequestHost()}/b/{file.PublicId}
+
+To delete the file, open this url in a browser {context.Request.GetRequestHost()}/b/{file.PublicId}/delete?key={file.DeletionKey}.
+{deletionNote}
+""");
 }
 
-IResult UploadBig(HttpContext context, DB db) {
+IResult UploadFilePart(HttpContext context, Eva db) {
     return Results.Ok();
 }
 
-IResult UploadText(HttpContext context, DB db) {
-    return Results.Ok();
+async Task<IResult> UploadText(HttpContext context, Eva db) {
+    if (context.Request.Form["content"].ToString().IsNullOrWhiteSpace()) {
+        return Results.Text("No content was found in request", default, default, 400);
+    }
+
+    var paste = new Paste {
+        CreatedBy = context.Request.Headers["X-Forwarded-For"].ToString(),
+        Singleton = context.Request.Form["singleton"] == "on",
+        AutoDeleteAfter = context.Request.Form["autoDeleteAfter"],
+        Length = context.Request.Form["content"].Count,
+        Name = context.Request.Form["name"],
+        MimeType = context.Request.Form["mime"],
+        PublicId = GetUnusedPublicPasteId(db),
+        Content = context.Request.Form["content"],
+        DeletionKey = RandomString.Generate(6),
+    };
+
+    if (paste.MimeType.IsNullOrWhiteSpace()) {
+        paste.MimeType = "text/plain";
+    }
+
+    if (context.Request.Form["password"].ToString().HasValue()) {
+        paste.PasswordHash = PasswordHelper.HashPassword(context.Request.Form["password"]);
+    }
+
+    db.Pastes.Add(paste);
+    db.SaveChanges();
+    var deletionNote = "The paste is only deleted when you request it.";
+    if (paste.AutoDeleteAfter.HasValue()) {
+        var relativeDateTime = paste.CreatedAt.Add(Tools.ParseHumanTimeSpan(paste.AutoDeleteAfter));
+        deletionNote = $"The paste will be automatically deleted at {relativeDateTime:u}";
+    }
+
+    return Results.Text($"""
+Your paste is available here: {context.Request.GetRequestHost()}/p/{paste.PublicId}
+
+To delete the paste, open this url in a browser {context.Request.GetRequestHost()}/p/{paste.PublicId}/delete?key={paste.DeletionKey}.
+{deletionNote}
+""");
 }
 
-async Task<IResult> GetBlob(string id, DB db) {
+async Task<IResult> GetPaste(HttpContext context, string id, Eva db) {
+    var paste = db.Pastes.FirstOrDefault(c => c.PublicId == id.Trim());
+    if (paste is not {DeletedAt: null}) return Results.NotFound();
+    if (paste.PasswordHash.HasValue()) {
+        var password = context.Request.Method == "POST" ? context.Request.Form["password"].ToString() : "";
+        if (password.IsNullOrWhiteSpace() || !PasswordHelper.Verify(password, paste.PasswordHash)) {
+            return Results.Content($"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/index.css">
+    <title>{paste.PublicId} - Authenticate - Blobbin</title>
+</head>
+<body>
+<form action="/p/{paste.PublicId}" method="post">
+    <p>Authenticate to access this paste:</p>
+    <input type="password" name="password" placeholder="Password">
+    <button type="submit">Unlock</button>
+</form>
+</body>
+</html>
+""", "text/html");
+        }
+    }
+
+    if (paste.Singleton) {
+        paste.DeletedAt = DateTime.UtcNow;
+        db.SaveChanges();
+    }
+
+    if (ShouldDeleteUpload(paste)) {
+        paste.DeletedAt = DateTime.UtcNow;
+        db.SaveChanges();
+    }
+
+    Console.WriteLine(JsonSerializer.Serialize(paste));
+    return Results.Content(paste.Content, paste.MimeType, Encoding.UTF8);
+}
+
+async Task<IResult> GetFile(HttpContext context, Eva db, string id, bool download = false) {
     var file = db.Files.FirstOrDefault(c => c.PublicId == id.Trim());
-    if (file == default) return Results.NotFound();
+    if (file is not {DeletedAt: null}) return Results.NotFound();
+    if (file.PasswordHash.HasValue()) {
+        var password = context.Request.Method == "POST" ? context.Request.Form["password"].ToString() : "";
+        if (password.IsNullOrWhiteSpace() || !PasswordHelper.Verify(password, file.PasswordHash)) {
+            return Results.Content($"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/index.css">
+    <title>{file.PublicId} - Authenticate - Blobbin</title>
+</head>
+<body>
+<form action="/b/{file.PublicId}" method="post">
+    <p>Authenticate to access this file:</p>
+    <input type="password" name="password" placeholder="Password">
+    <button type="submit">Unlock</button>
+</form>
+</body>
+</html>
+""", "text/html");
+        }
+    }
+
+    if (file.Singleton) {
+        file.DeletedAt = DateTime.UtcNow;
+        db.SaveChanges();
+    }
+
+    if (ShouldDeleteUpload(file)) {
+        file.DeletedAt = DateTime.UtcNow;
+        db.SaveChanges();
+    }
+
     var reader = await System.IO.File.ReadAllBytesAsync(
         Path.Combine(
-            Util.GetFilesDirectoryPath(), file.Id.ToString()
+            Tools.GetFilesDirectoryPath(), file.Id.ToString()
         )
     );
-    return Results.File(reader, file.MimeType, file.Name);
+    return download ? Results.File(reader, file.MimeType, file.Name) : Results.Bytes(reader, file.MimeType);
 }
 
+bool ShouldDeleteUpload(UploadEntityBase entity) {
+    if (entity.AutoDeleteAfter.IsNullOrWhiteSpace()) {
+        return false;
+    }
 
-string GetUnusedBlobId(DB db) {
+    var deletedDateTime = entity.CreatedAt.Add(Tools.ParseHumanTimeSpan(entity.AutoDeleteAfter));
+    return DateTime.Compare(DateTime.UtcNow, deletedDateTime) > 0;
+}
+
+string GetUnusedPublicFileId(Eva db) {
     string id() => RandomString.Generate(3);
     var res = id();
     while (db.Files.Any(c => c.PublicId == res)) {
@@ -93,20 +271,12 @@ string GetUnusedBlobId(DB db) {
     return res;
 }
 
-class BlobBase
-{
-    public string Password { get; set; }
-    public bool Singleton { get; set; }
-    public string AutoDeleteAfter { get; set; }
-}
+string GetUnusedPublicPasteId(Eva db) {
+    string id() => RandomString.Generate(3);
+    var res = id();
+    while (db.Pastes.Any(c => c.PublicId == res)) {
+        res = id();
+    }
 
-class PasteRequest : BlobBase
-{
-    public string Text { get; set; }
-    public string Mime { get; set; }
-}
-
-class UploadRequest : BlobBase
-{
-    public IFormFile? File { get; set; }
+    return res;
 }

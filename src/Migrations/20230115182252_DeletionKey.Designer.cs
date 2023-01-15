@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlobBin.Migrations
 {
     [DbContext(typeof(Eva))]
-    [Migration("20230112230354_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20230115182252_DeletionKey")]
+    partial class DeletionKey
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -37,6 +37,10 @@ namespace BlobBin.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletionKey")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<long>("Length")
@@ -83,6 +87,10 @@ namespace BlobBin.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletionKey")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<long>("Length")

@@ -1,0 +1,80 @@
+body {
+    font-family: sans-serif;
+    background: white;
+    color: #333;
+}
+
+form {
+    width: 100%;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#forms {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+#forms .wrapper {
+    width: 300px;
+}
+
+textarea {
+    overflow-y: hidden;
+    min-height: calc(1.5em + .75rem + 2px);
+    resize: vertical;
+}
+
+.btn {
+    padding: 4px 12px;
+    min-width: 88px;
+    border: none;
+    font: inherit;
+    color: #373030;
+    border-radius: 4px;
+    outline: none;
+    text-decoration: none;
+    cursor: default;
+    font-weight: 400;
+    background: #fff;
+    box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.3), 0px 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+.btn:active {
+    background: linear-gradient(#4faefc, #006bff);
+    color: #fff;
+    position: relative;
+}
+
+.btn.btn-blue {
+    color: #fff;
+    background: linear-gradient(#81c5fd, #3389ff);
+}
+
+.btn.btn-blue:active {
+    background: linear-gradient(#4faefc, #006bff);
+}
+
+.btn.btn-red {
+    color: #fff;
+    background: linear-gradient(#fd6c6f, #e70307);
+}
+
+.btn.btn-red:active {
+    background: linear-gradient(#fc2125, #b50206);
+}
+
+.btn.btn-green {
+    color: #fff;
+    background: linear-gradient(#89e36b, #44ae21);
+}
+
+.btn.btn-green:active {
+    background: linear-gradient(#56d72b, #338319);
+}
+
+.text-input {}

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace BlobBin.Migrations
 {
-    [DbContext(typeof(DB))]
+    [DbContext(typeof(Eva))]
     partial class DBModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
@@ -34,6 +34,10 @@ namespace BlobBin.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletionKey")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<long>("Length")
@@ -80,6 +84,10 @@ namespace BlobBin.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeletionKey")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<long>("Length")
