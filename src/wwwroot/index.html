@@ -22,9 +22,63 @@
             flex-wrap: wrap;
         }
 
-        #forms summary {
+        #forms .wrapper {
             width: 300px;
             cursor: pointer;
+        }
+
+        textarea {
+            overflow-y: hidden;
+            min-height: calc(1.5em + .75rem + 2px);
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 4px 12px;
+            min-width: 88px;
+            border: none;
+            font: inherit;
+            color: #373030;
+            border-radius: 4px;
+            outline: none;
+            text-decoration: none;
+            cursor: default;
+            font-weight: 400;
+            background: #fff;
+            box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.3), 0px 1px 1px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn:active {
+            background: linear-gradient(#4faefc, #006bff);
+            color: #fff;
+            position: relative;
+        }
+
+        .btn.btn-blue {
+            color: #fff;
+            background: linear-gradient(#81c5fd, #3389ff);
+        }
+
+        .btn.btn-blue:active {
+            background: linear-gradient(#4faefc, #006bff);
+        }
+
+        .btn.btn-red {
+            color: #fff;
+            background: linear-gradient(#fd6c6f, #e70307);
+        }
+
+        .btn.btn-red:active {
+            background: linear-gradient(#fc2125, #b50206);
+        }
+
+        .btn.btn-green {
+            color: #fff;
+            background: linear-gradient(#89e36b, #44ae21);
+        }
+
+        .btn.btn-green:active {
+            background: linear-gradient(#56d72b, #338319);
         }
     </style>
     <title>Blobbin</title>
@@ -33,10 +87,11 @@
 <h1>Blobbin</h1>
 <p>This is a web service you can upload files and texts to.</p>
 <main id="forms">
-    <details>
-        <summary>Upload a file</summary>
-        <form action="/upload" enctype="multipart/form-data" method="post">
-            <input type="file" id="file" name="files" required>
+    <div class="wrapper">
+        <h2>Upload a file</h2>
+        <form action="/upload" enctype="multipart/form-data" id="file-form" method="post" autocomplete="off"
+              autocapitalize="off">
+            <input type="file" maxlength="104857600" id="file" name="files" required>
             <label for="file-password">Password (optional)</label>
             <input type="password" name="password" id="file-password">
             <label for="file-auto-delete">
@@ -46,16 +101,16 @@
             </label>
             <input type="text"
                    id="file-auto-delete"
-            name="autoDeleteAfter">
+                   name="autoDeleteAfter">
             <label for="file-singleton">
                 <input type="checkbox" name="singleton" id="file-singleton">
                 Delete after first open</label>
-            <input type="submit">
+            <button class="btn" type="submit">Start upload</button>
         </form>
-    </details>
-    <details>
-        <summary>Upload some text</summary>
-        <form action="/text" method="post">
+    </div>
+    <div class="wrapper">
+        <h2>Upload some text</h2>
+        <form action="/text" method="post" id="text-form" autocomplete="off" autocapitalize="off">
             <textarea id="text" name="text" required></textarea>
             <label for="text-password">Mimetype (default: text/plain)</label>
             <input type="password" name="mime" id="text-mimetype">
@@ -72,9 +127,31 @@
             <label for="text-singleton">
                 <input type="checkbox" id="text-singleton" name="singleton">
                 Delete after first open</label>
-            <input type="submit">
+            <button class="btn" type="submit">Start upload</button>
         </form>
-    </details>
+    </div>
 </main>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const fileInput = document.getElementById("file");
+        document.getElementById("file-form").addEventListener("submit", () => {
+            if (fileInput.files[0].size > 104_857_60) {
+                alert("Uploading...");
+            }
+        });
+        fileInput.addEventListener("change", (e) => {
+            if (e.target.files[0].size > 104_857_600) {
+                alert("File is too big!");
+                e.target.value = "";
+            }
+        });
+        document.querySelectorAll("textarea").forEach(area => {
+            area.addEventListener("input", event => {
+                event.target.style.height = "auto";
+                event.target.style.height = event.target.scrollHeight + "px";
+            })
+        })
+    });
+</script>
 </body>
 </html>
