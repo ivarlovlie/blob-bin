@@ -58,7 +58,7 @@
         const fileInput = document.getElementById("file");
         document.getElementById("file-form").addEventListener("submit", () => {
             if (fileInput.files[0].size > 104_857_60) {
-                alert("Uploading...");
+                document.querySelector("#file-form .btn").innerText = "Uploading...";
             }
         });
         fileInput.addEventListener("change", (e) => {
