@@ -5,7 +5,7 @@ using File = BlobBin.File;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DB>();
-builder.Services.Configure<FormOptions>(o => { o.MultipartBodyLengthLimit = 10000000; });
+builder.WebHost.UseKestrel(o => { o.Limits.MaxRequestBodySize = 100_000_000; });
 var app = builder.Build();
 
 app.UseFileServer();
