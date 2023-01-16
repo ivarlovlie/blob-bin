@@ -27,7 +27,7 @@ app.Run();
 
 IResult DeleteUpload(HttpContext context, Db db, string id, string key = default, bool confirmed = false) {
     if (key.IsNullOrWhiteSpace()) {
-        return Results.BadRequest("No key was found");
+        return Results.Text("No key was found", default, default, 400);
     }
 
     var isPaste = context.Request.Path.StartsWithSegments("/p");
