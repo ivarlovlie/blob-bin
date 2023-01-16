@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="/index.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Blobbin</title>
 </head>
 <body>
 <h1>Blobbin</h1>
 <p>This is a web service you can upload files and texts to.</p>
 <main id="forms">
-    <div class="wrapper">
-        <h2>Upload a file</h2>
+    <fieldset>
+        <legend>Upload a file</legend>
         <form action="/file" enctype="multipart/form-data" id="file-form" method="post" autocomplete="off"
               autocapitalize="off">
+            <label for="file">File</label>
             <input type="file" maxlength="104857600" id="file" name="files" required>
             <label for="file-password">Password (optional)</label>
             <input type="password" name="password" id="file-password">
@@ -24,15 +27,20 @@
             <input type="text"
                    id="file-auto-delete"
                    name="autoDeleteAfter">
-            <label for="file-singleton">
-                <input type="checkbox" name="singleton" id="file-singleton">
-                Delete after first open</label>
-            <button class="btn" type="submit">Start upload</button>
+            <div class="flex-end">
+                <label for="file-singleton" style="margin-bottom: 5px">
+                    <input type="checkbox" name="singleton" id="file-singleton">
+                    Delete after first open
+                </label>
+                <button class="btn" type="submit">Start upload</button>
+            </div>
         </form>
-    </div>
-    <div class="wrapper">
-        <h2>Upload some text</h2>
+    </fieldset>
+
+    <fieldset>
+        <legend>Upload some text</legend>
         <form action="/text" method="post" id="text-form" autocomplete="off" autocapitalize="off">
+            <label for="text">Content</label>
             <textarea id="text" name="content" required></textarea>
             <label for="text-mimetype">Mimetype (default: text/plain)</label>
             <input type="text" name="mime" id="text-mimetype">
@@ -46,12 +54,15 @@
             <input type="text"
                    id="text-auto-delete"
                    name="autoDeleteAfter">
-            <label for="text-singleton">
-                <input type="checkbox" id="text-singleton" name="singleton">
-                Delete after first open</label>
-            <button class="btn" type="submit">Start upload</button>
+            <div class="flex-end">
+                <label for="text-singleton" style="margin-bottom: 5px">
+                    <input type="checkbox" id="text-singleton" name="singleton">
+                    Delete after first open
+                </label>
+                <button class="btn" type="submit">Start upload</button>
+            </div>
         </form>
-    </div>
+    </fieldset>
 </main>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
