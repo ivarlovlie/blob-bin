@@ -21,7 +21,7 @@ public class WallE : BackgroundService
     private async Task DoWork(CancellationToken stoppingToken) {
         _logger.LogInformation("WallE is working.");
         using var scope = Services.CreateScope();
-        var eva = scope.ServiceProvider.GetRequiredService<Eva>();
+        var eva = scope.ServiceProvider.GetRequiredService<Db>();
         var pastes = eva.Pastes.Where(c => c.DeletedAt != default || c.AutoDeleteAfter != default)
             .Select(c => new Paste() {
                 Id = c.Id,

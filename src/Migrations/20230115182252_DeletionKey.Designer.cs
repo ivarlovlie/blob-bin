@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace BlobBin.Migrations
 {
-    [DbContext(typeof(Eva))]
+    [DbContext(typeof(Db))]
     [Migration("20230115182252_DeletionKey")]
     partial class DeletionKey
     {

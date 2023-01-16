@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace BlobBin.Migrations
 {
-    [DbContext(typeof(Eva))]
+    [DbContext(typeof(Db))]
     partial class DBModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

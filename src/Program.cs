@@ -6,7 +6,7 @@ using File = BlobBin.File;
 
 const long MAX_REQUEST_BODY_SIZE = 104_857_600;
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<Eva>();
+builder.Services.AddDbContext<Db>();
 builder.Services.AddHostedService<WallE>();
 builder.WebHost.UseKestrel(o => { o.Limits.MaxRequestBodySize = MAX_REQUEST_BODY_SIZE; });
 var app = builder.Build();
@@ -25,7 +25,7 @@ app.MapPost("/p/{id}", GetPaste);
 Tools.GetFilesDirectoryPath(true);
 app.Run();
 
-IResult DeleteUpload(HttpContext context, Eva db, string id, string key = default, bool confirmed = false) {
+IResult DeleteUpload(HttpContext context, Db db, string id, string key = default, bool confirmed = false) {
     if (key.IsNullOrWhiteSpace()) {
         return Results.BadRequest("No key was found");
     }
@@ -70,7 +70,7 @@ The file is marked for deletion and cannot be accessed any more, all traces off 
 """);
 }
 
-IResult GetFileUploadLink(HttpContext context, Eva db) {
+IResult GetFileUploadLink(HttpContext context, Db db) {
     var file = new File {
         CreatedBy = context.Request.Headers["X-Forwarded-For"].ToString()
     };
@@ -83,7 +83,7 @@ IResult GetFileUploadLink(HttpContext context, Eva db) {
     );
 }
 
-async Task<IResult> UploadFile(HttpContext context, Eva db) {
+async Task<IResult> UploadFile(HttpContext context, Db db) {
     if (!context.Request.Form.Files.Any()) {
         return Results.BadRequest("No files was found in request");
     }
@@ -123,11 +123,11 @@ To delete the file, open this url in a browser {context.Request.GetRequestHost()
 """);
 }
 
-IResult UploadFilePart(HttpContext context, Eva db) {
+IResult UploadFilePart(HttpContext context, Db db) {
     return Results.Ok();
 }
 
-async Task<IResult> UploadText(HttpContext context, Eva db) {
+async Task<IResult> UploadText(HttpContext context, Db db) {
     if (context.Request.Form["content"].ToString().IsNullOrWhiteSpace()) {
         return Results.Text("No content was found in request", default, default, 400);
     }
@@ -168,7 +168,7 @@ To delete the paste, open this url in a browser {context.Request.GetRequestHost(
 """);
 }
 
-async Task<IResult> GetPaste(HttpContext context, string id, Eva db) {
+async Task<IResult> GetPaste(HttpContext context, string id, Db db) {
     var paste = db.Pastes.FirstOrDefault(c => c.PublicId == id.Trim());
     if (paste is not {DeletedAt: null}) return Results.NotFound();
     if (paste.PasswordHash.HasValue()) {
@@ -208,7 +208,7 @@ async Task<IResult> GetPaste(HttpContext context, string id, Eva db) {
     return Results.Content(paste.Content, paste.MimeType, Encoding.UTF8);
 }
 
-async Task<IResult> GetFile(HttpContext context, Eva db, string id, bool download = false) {
+async Task<IResult> GetFile(HttpContext context, Db db, string id, bool download = false) {
     var file = db.Files.FirstOrDefault(c => c.PublicId == id.Trim());
     if (file is not {DeletedAt: null}) return Results.NotFound();
     if (file.PasswordHash.HasValue()) {
@@ -261,7 +261,7 @@ bool ShouldDeleteUpload(UploadEntityBase entity) {
     return DateTime.Compare(DateTime.UtcNow, deletedDateTime) > 0;
 }
 
-string GetUnusedPublicFileId(Eva db) {
+string GetUnusedPublicFileId(Db db) {
     string id() => RandomString.Generate(3);
     var res = id();
     while (db.Files.Any(c => c.PublicId == res)) {
@@ -271,7 +271,7 @@ string GetUnusedPublicFileId(Eva db) {
     return res;
 }
 
-string GetUnusedPublicPasteId(Eva db) {
+string GetUnusedPublicPasteId(Db db) {
     string id() => RandomString.Generate(3);
     var res = id();
     while (db.Pastes.Any(c => c.PublicId == res)) {

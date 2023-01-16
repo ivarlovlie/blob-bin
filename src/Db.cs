@@ -2,11 +2,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BlobBin;
 
-public sealed class Eva : DbContext
+public sealed class Db : DbContext
 {
     private readonly bool migrated;
 
-    public Eva(DbContextOptions<Eva> options) : base(options) {
+    public Db(DbContextOptions<Db> options) : base(options) {
         if (!migrated) {
             Database.Migrate();
             migrated = true;
