@@ -2,16 +2,33 @@ global using BlobBin;
 using System.Text;
 using System.Text.Json;
 using IOL.Helpers;
+using Serilog;
+using Serilog.Events;
 using File = BlobBin.File;
 
 const long MAX_REQUEST_BODY_SIZE = 104_857_600;
 var builder = WebApplication.CreateBuilder(args);
+var logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .WriteTo.Console();
+Log.Logger = logger.CreateLogger();
+Log.Information("Starting web host");
+builder.Host.UseSerilog(Log.Logger);
 builder.Services.AddDbContext<Db>();
 builder.Services.AddHostedService<WallE>();
 builder.WebHost.UseKestrel(o => { o.Limits.MaxRequestBodySize = MAX_REQUEST_BODY_SIZE; });
 var app = builder.Build();
 app.UseFileServer();
 app.UseStatusCodePages();
+app.UseSerilogRequestLogging();
+if (app.Environment.IsProduction()) {
+    app.UseForwardedHeaders();
+}
+
 app.MapGet("/upload-link", GetFileUploadLink);
 app.MapPost("/file/{id}", UploadFilePart);
 app.MapPost("/file", UploadFile);
@@ -66,7 +83,7 @@ IResult DeleteUpload(HttpContext context, Db db, string id, string key = default
     db.SaveChanges();
 
     return Results.Text("""
-The file is marked for deletion and cannot be accessed any more, all traces off it will be gone from our systems within 7 days. 
+The upload is marked for deletion and cannot be accessed any more, all traces off it will be gone from our systems within 7 days. 
 """);
 }
 
@@ -123,7 +140,7 @@ To delete the file, open this url in a browser {context.Request.GetRequestHost()
 """);
 }
 
-IResult UploadFilePart(HttpContext context, Db db) {
+IResult UploadFilePart(HttpContext context, Db db, Guid id) {
     return Results.Ok();
 }
 
