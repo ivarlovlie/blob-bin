@@ -40,7 +40,6 @@ echo
 # Put version.txt inside of server
 pushd src/wwwroot
 echo "$NEW_VERSION" >version.txt
-git add version.txt
 popd
 
 git commit --quiet -m "chore(release): Bump version"
