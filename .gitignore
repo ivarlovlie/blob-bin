@@ -480,3 +480,4 @@ AppData
 secrets
 .fleet
 .vscode
+src/wwwroot/version.txt
