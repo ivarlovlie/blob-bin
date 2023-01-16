@@ -244,11 +244,12 @@ async Task<IResult> GetFile(HttpContext context, Db db, string id, bool download
         db.SaveChanges();
     }
 
-    var reader = await System.IO.File.ReadAllBytesAsync(
-        Path.Combine(
-            Tools.GetFilesDirectoryPath(), file.Id.ToString()
-        )
-    );
+    var path = Path.Combine(Tools.GetFilesDirectoryPath(), file.Id.ToString());
+    if (!System.IO.File.Exists(path)) {
+        return Results.NotFound();
+    }
+
+    var reader = await System.IO.File.ReadAllBytesAsync(path);
     return download ? Results.File(reader, file.MimeType, file.Name) : Results.Bytes(reader, file.MimeType);
 }
 
