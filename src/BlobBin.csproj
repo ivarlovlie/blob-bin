@@ -9,11 +9,11 @@
 
     <ItemGroup>
         <PackageReference Include="IOL.Helpers" Version="3.1.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.2">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.3">
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.3" />
         <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
     </ItemGroup>
 

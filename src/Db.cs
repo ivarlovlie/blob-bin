@@ -15,6 +15,7 @@ public sealed class Db : DbContext
 
     public DbSet<File> Files { get; set; }
     public DbSet<Paste> Pastes { get; set; }
+    public DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         optionsBuilder.UseSqlite("data source = AppData/main.db");
@@ -32,7 +33,8 @@ public class UploadEntityBase
     public Guid Id { get; set; }
     public string PublicId { get; set; }
     public DateTime CreatedAt { get; set; }
-    public string CreatedBy { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public string IP { get; set; }
     public DateTime? DeletedAt { get; set; }
     public string? PasswordHash { get; set; }
     public bool Singleton { get; set; }
@@ -50,3 +52,12 @@ public class Paste : UploadEntityBase
 
 public class File : UploadEntityBase
 { }
+
+public class User
+{
+    public Guid Id { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public string IP { get; set; }
+    public string Uid { get; set; }
+    public string PasswordHash { get; set; }
+}

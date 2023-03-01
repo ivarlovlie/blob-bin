@@ -10,7 +10,13 @@
 <body>
 <h1>Blobbin</h1>
 <p>This is a web service you can upload files and texts to.</p>
-<main id="forms">
+<p>By uploading files you automatically acknowledge that you have read, understood and agree to our terms of service and
+    privay policy. Contact bb@oiee.no.</p>
+<p><b>Privacy policy:</b> When you upload a file, we store the contents, name and length unencrypted on our servers. We
+    don't
+    store identifiers on on your device, unless you log in.</p>
+<p><b>Terms of service:</b> Don't upload illegal content and don't crash our servers.</p>
+<main>
     <fieldset>
         <legend>Upload a file</legend>
         <form action="/file" enctype="multipart/form-data" id="file-form" method="post" autocomplete="off"
@@ -36,7 +42,6 @@
             </div>
         </form>
     </fieldset>
-
     <fieldset>
         <legend>Upload some text</legend>
         <form action="/text" method="post" id="text-form" autocomplete="off" autocapitalize="off">
@@ -63,7 +68,24 @@
             </div>
         </form>
     </fieldset>
+    <fieldset id="uploads" style="display: none;">
+        <legend>My uploads</legend>
+        <p>Log in to administrate your uploads</p>
+        <a href="#" id="login-logout" onclick="auth_prompt()">Log in</a>
+        <div id="upload-list"></div>
+    </fieldset>
 </main>
+<dialog id="auth-dialog">
+    <p>Authenticate</p>
+    <form method="dialog">
+        <input type="text" placeholder="uid" id="uid" required>
+        <input type="password" placeholder="password" id="uid-password" required>
+        <div>
+            <button value="cancel">Cancel</button>
+            <button id="submit" value="default">Submit</button>
+        </div>
+    </form>
+</dialog>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const fileInput = document.getElementById("file");
@@ -83,8 +105,66 @@
                 event.target.style.height = "auto";
                 event.target.style.height = event.target.scrollHeight + "px";
             })
-        })
+        });
+        initialise_uploads();
     });
+
+    const user = {
+        login() {
+        },
+        logout() {
+        },
+        delete() {
+        },
+        update() {
+        },
+        create() {
+        },
+        async verifyAsync(uid, pass) {
+            return (await fetch("/user-verify", {
+                method: "post",
+                body: JSON.stringify(payload)
+            })).ok;
+        }
+    }
+
+    const uploads = {
+        synchronise() {
+        },
+        async getFromServerAsync() {
+            const res = await fetch("/uploads");
+        },
+        getFromLocal() {
+            return JSON.parse(localStorage.getItem("uploads"))
+        },
+        setToLocal(uploads) {
+            localStorage.setItem("uploads", JSON.stringify(uploads));
+        }
+    }
+
+    async function auth_prompt() {
+        const dialog = document.getElementById("auth-dialog");
+        dialog.showModal();
+        return new Promise((resolve, reject) => {
+            dialog.addEventListener("close", async () => {
+                const payload = {
+                    uid: document.querySelector("#auth-dialog #uid"),
+                    password: document.querySelector("#auth-dialog #uid-password")
+                };
+                if (payload.password && payload.uid) {
+                    const isAuthenticated = await user.verifyAsync(payload.uid, payload.password);
+                    resolve({authenticated: isAuthenticated})
+                }
+                resolve({authenticated: false})
+            })
+        })
+    }
+
+    function initialise_uploads() {
+        const wrapper = document.getElementById("uploads");
+        uploads.synchronise();
+        wrapper.style.display = "inline-block";
+    }
 </script>
 </body>
 </html>

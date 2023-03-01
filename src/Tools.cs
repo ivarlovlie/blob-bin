@@ -14,6 +14,35 @@ public static class Tools
         return filesDirectoryPath;
     }
 
+    public static string GetUnusedPublicPasteId(Db db) {
+        string id() => RandomString.Generate(3);
+        var res = id();
+        while (db.Pastes.Any(c => c.PublicId == res)) {
+            res = id();
+        }
+
+        return res;
+    }
+
+    public static bool ShouldDeleteUpload(UploadEntityBase entity) {
+        if (entity.AutoDeleteAfter.IsNullOrWhiteSpace()) {
+            return false;
+        }
+
+        var deletedDateTime = entity.CreatedAt.Add(Tools.ParseHumanTimeSpan(entity.AutoDeleteAfter));
+        return DateTime.Compare(DateTime.UtcNow, deletedDateTime) > 0;
+    }
+
+    public static string GetUnusedPublicFileId(Db db) {
+        string id() => RandomString.Generate(3);
+        var res = id();
+        while (db.Files.Any(c => c.PublicId == res)) {
+            res = id();
+        }
+
+        return res;
+    }
+
     public static TimeSpan ParseHumanTimeSpan(string dateTime) {
         var ts = TimeSpan.Zero;
         var currentString = "";

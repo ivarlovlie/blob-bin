@@ -1,14 +1,12 @@
-using IOL.Helpers;
-
 namespace BlobBin;
 
-public class WallE : BackgroundService
+public class CleanupService : BackgroundService
 {
-    public IServiceProvider Services { get; }
-    private readonly ILogger<WallE> _logger;
+    private IServiceProvider Services { get; }
+    private readonly ILogger<CleanupService> _logger;
 
-    public WallE(IServiceProvider services,
-        ILogger<WallE> logger) {
+    public CleanupService(IServiceProvider services,
+        ILogger<CleanupService> logger) {
         Services = services;
         _logger = logger;
     }
