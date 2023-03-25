@@ -1,24 +1,31 @@
 namespace BlobBin.Endpoints;
 
-public static class UpdateUser
+public class UpdateUser : BaseEndpoint
 {
-    public static IResult Handle(HttpContext context, Db db) {
-        var user = db.Users.FirstOrDefault(c => c.Uid == context.Request.Form["uid"]);
+    private readonly Db _db;
+
+    public UpdateUser(Db db) {
+        _db = db;
+    }
+
+    [HttpPost("/update-user")]
+    public ActionResult Handle() {
+        var user = _db.Users.FirstOrDefault(c => c.Uid == Request.Form["uid"]);
         if (user == default) {
-            return Results.Empty;
+            return NoContent();
         }
 
-        if (!PasswordHelper.Verify(context.Request.Form["password"], user.PasswordHash)) {
-            return Results.Unauthorized();
+        if (!PasswordHelper.Verify(Request.Form["password"], user.PasswordHash)) {
+            return Unauthorized();
         }
 
-        if (context.Request.Form["newuid"].ToString().IsNullOrWhiteSpace()) {
-            return Results.BadRequest("No new uid was specified");
+        if (Request.Form["newuid"].ToString().IsNullOrWhiteSpace()) {
+            return BadRequest("No new uid was specified");
         }
 
-        user.Uid = context.Request.Form["newuid"];
+        user.Uid = Request.Form["newuid"];
 
-        db.SaveChanges();
-        return Results.Ok();
+        _db.SaveChanges();
+        return Ok();
     }
 }

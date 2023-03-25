@@ -1,25 +1,33 @@
-public static class DeleteUpload
+public class DeleteUpload : BaseEndpoint
 {
-    public static IResult Handle(HttpContext context, Db db, string id, string key = default, bool confirmed = false) {
+    private readonly Db _db;
+
+    public DeleteUpload(Db db) {
+        _db = db;
+    }
+
+    [HttpGet("/b/{id}/delete")]
+    [HttpGet("/p/{id}/delete")]
+    public ActionResult Handle(string id, string key = default, bool confirmed = false) {
         if (key.IsNullOrWhiteSpace()) {
-            return Results.Text("No key was found", default, default, 400);
+            return BadRequest("No key was found");
         }
 
-        var isPaste = context.Request.Path.StartsWithSegments("/p");
+        var isPaste = Request.Path.StartsWithSegments("/p");
         UploadEntityBase? upload = isPaste
-            ? db.Pastes.FirstOrDefault(c => c.PublicId == id)
-            : db.Files.FirstOrDefault(c => c.PublicId == id);
+            ? _db.Pastes.FirstOrDefault(c => c.PublicId == id)
+            : _db.Files.FirstOrDefault(c => c.PublicId == id);
 
         if (upload is not {DeletedAt: null}) {
-            return Results.NotFound();
+            return NotFound();
         }
 
         if (upload.DeletionKey != key) {
-            return Results.Text("Invalid key", default, default, 400);
+            return BadRequest("Invalid key");
         }
 
         if (!confirmed) {
-            return Results.Content($"""
+            return Content($"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,8 +37,8 @@ public static class DeleteUpload
 </head>
 <body>
     <p>Are you sure you want to delete {upload.Name}?</p>
-    <a href="{context.Request.Path.ToString()}&confirmed=true">Yes</a>
-    <span>  </span>
+    <a href="{Request.Path.ToString()}?key={key}&confirmed=true">Yes</a>
+    <span> - </span>
     <a href="/">No, cancel</a>
 </body>
 </html>
@@ -38,10 +46,10 @@ public static class DeleteUpload
         }
 
         upload.DeletedAt = DateTime.UtcNow;
-        db.SaveChanges();
+        _db.SaveChanges();
 
-        return Results.Text("""
+        return Content("""
 The upload is marked for deletion and cannot be accessed any more, all traces off it will be gone from our systems within 7 days. 
-""");
+""", "text/plain");
     }
 }

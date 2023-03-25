@@ -1,19 +1,24 @@
 namespace BlobBin.Endpoints;
 
-public static class GetFile
+public class GetFile : BaseEndpoint
 {
-    public static async Task<IResult> Handle(
-        HttpContext context, 
-        Db db, 
-        string id, 
-        ILogger logger,
-        bool download = false) {
-        var file = db.Files.FirstOrDefault(c => c.PublicId == id.Trim());
-        if (file is not {DeletedAt: null}) return Results.NotFound();
+    private readonly Db _db;
+    private readonly ILogger<GetFile> _logger;
+
+    public GetFile(Db db, ILogger<GetFile> logger) {
+        _db = db;
+        _logger = logger;
+    }
+
+    [HttpGet("/b/{id}")]
+    [HttpPost("/b/{id}")]
+    public async Task<ActionResult> Handle(string id) {
+        var file = _db.Files.FirstOrDefault(c => c.PublicId == id.Trim());
+        if (file is not {DeletedAt: null}) return NotFound();
         if (file.PasswordHash.HasValue()) {
-            var password = context.Request.Method == "POST" ? context.Request.Form["password"].ToString() : "";
+            var password = Request.Method == "POST" ? Request.Form["password"].ToString() : "";
             if (password.IsNullOrWhiteSpace() || !PasswordHelper.Verify(password, file.PasswordHash)) {
-                return Results.Content($"""
+                return Content($"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,22 +40,22 @@ public static class GetFile
 
         if (file.Singleton) {
             file.DeletedAt = DateTime.UtcNow;
-            await db.SaveChangesAsync();
-            logger.LogInformation("Deleting file {fileid}, because it is marked as singleton",file.Id);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Deleting file {fileid}, because it is marked as singleton", file.Id);
         }
 
         if (Tools.ShouldDeleteUpload(file)) {
             file.DeletedAt = DateTime.UtcNow;
-            await db.SaveChangesAsync();
-            logger.LogInformation("Deleting file {fileid}, because it is time",file.Id);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Deleting file {fileid}, because it is time", file.Id);
         }
 
         var path = Path.Combine(Tools.GetFilesDirectoryPath(), file.Id.ToString());
         if (!System.IO.File.Exists(path)) {
-            return Results.NotFound();
+            return NotFound();
         }
 
         var reader = await System.IO.File.ReadAllBytesAsync(path);
-        return download ? Results.File(reader, file.MimeType, file.Name) : Results.Bytes(reader, file.MimeType, file.Name);
+        return File(reader, file.MimeType, file.Name);
     }
 }

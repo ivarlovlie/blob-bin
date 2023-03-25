@@ -1,30 +1,37 @@
 namespace BlobBin.Endpoints;
 
-public static class GetUploads
+public class GetUploads : BaseEndpoint
 {
-    public static IResult Handle(HttpContext context, Db db) {
-        if (context.Request.Form["uid"].ToString().IsNullOrWhiteSpace()) {
-            return Results.BadRequest("No uid");
+    private readonly Db _db;
+
+    public GetUploads(Db db) {
+        _db = db;
+    }
+
+    [HttpPost("/uploads")]
+    public ActionResult Handle() {
+        if (Request.Form["uid"].ToString().IsNullOrWhiteSpace()) {
+            return BadRequest("No uid");
         }
 
-        var uid = context.Request.Form["uid"].ToString().AsGuid();
+        var uid = Request.Form["uid"].ToString().AsGuid();
 
-        if (context.Request.Form["password"].ToString().IsNullOrWhiteSpace()) {
-            return Results.BadRequest("No password");
+        if (Request.Form["password"].ToString().IsNullOrWhiteSpace()) {
+            return BadRequest("No password");
         }
 
-        var user = db.Users.FirstOrDefault(c => c.Id == uid);
+        var user = _db.Users.FirstOrDefault(c => c.Id == uid);
         if (user == default) {
-            return Results.Empty;
+            return NoContent();
         }
 
-        if (!PasswordHelper.Verify(context.Request.Form["password"], user.PasswordHash)) {
-            return Results.Unauthorized();
+        if (!PasswordHelper.Verify(Request.Form["password"], user.PasswordHash)) {
+            return Unauthorized();
         }
 
-        return Results.Json(new {
-            Files = db.Files.Where(c => c.CreatedBy == uid),
-            Pastes = db.Pastes.Where(c => c.CreatedBy == uid)
+        return Ok(new {
+            Files = _db.Files.Where(c => c.CreatedBy == uid),
+            Pastes = _db.Pastes.Where(c => c.CreatedBy == uid)
         });
     }
 }

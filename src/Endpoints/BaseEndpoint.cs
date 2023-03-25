@@ -1,6 +1,5 @@
 namespace BlobBin.Endpoints;
 
-public class BaseEndpoint
-{
-    
-}
+[ApiController]
+public class BaseEndpoint : ControllerBase
+{ }

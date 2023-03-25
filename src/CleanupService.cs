@@ -12,12 +12,12 @@ public class CleanupService : BackgroundService
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
-        _logger.LogInformation("WallE is running.");
+        _logger.LogInformation("CleanupService is running.");
         await DoWork(stoppingToken);
     }
 
     private async Task DoWork(CancellationToken stoppingToken) {
-        _logger.LogInformation("WallE is working.");
+        _logger.LogInformation("CleanupService is working.");
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<Db>();
         var pastes = db.Pastes.Where(c => c.DeletedAt != default || c.AutoDeleteAfter != default)
@@ -40,7 +40,7 @@ public class CleanupService : BackgroundService
         var now = DateTime.UtcNow;
         foreach (var file in files) {
             var path = Path.Combine(Tools.GetFilesDirectoryPath(), file.Id.ToString());
-            if (DateTime.Compare(now, file.DeletedAt?.AddDays(7) ?? DateTime.MinValue) > 0) {
+            if (file.DeletedAt != default && DateTime.Compare(now, file.DeletedAt?.AddDays(7) ?? DateTime.MinValue) > 0) {
                 System.IO.File.Delete(path);
                 db.Files.Remove(file);
                 await db.SaveChangesAsync(stoppingToken);

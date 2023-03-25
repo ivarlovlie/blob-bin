@@ -1,17 +1,24 @@
 namespace BlobBin.Endpoints;
 
-public static class GetFileUploadLink
+public class GetFileUploadLink : BaseEndpoint
 {
-    public static IResult Handle(HttpContext context, Db db) {
+    private readonly Db _db;
+
+    public GetFileUploadLink(Db db) {
+        _db = db;
+    }
+
+    [HttpGet("/upload-link")]
+    public ActionResult Handle() {
         var file = new File {
-            IP = context.Request.Headers["X-Forwarded-For"].ToString()
+            IP = Request.Headers["X-Forwarded-For"].ToString()
         };
-        db.Files.Add(file);
-        db.SaveChanges();
-        return Results.Text(
-            context.Request.GetRequestHost()
+        _db.Files.Add(file);
+        _db.SaveChanges();
+        return Content(
+            Request.GetRequestHost()
             + "/upload/"
             + file.Id
-        );
+            , "text/plain");
     }
 }

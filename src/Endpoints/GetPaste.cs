@@ -1,20 +1,22 @@
-using Microsoft.AspNetCore.Mvc;
-
 namespace BlobBin.Endpoints;
 
-public static class GetPaste
+public class GetPaste : BaseEndpoint
 {
-    public static async Task<IResult> Handle(
-        HttpContext context,
-        [FromRoute] string id,
-        Db db,
-        ILogger logger) {
-        var paste = db.Pastes.FirstOrDefault(c => c.PublicId == id.Trim());
-        if (paste is not {DeletedAt: null}) return Results.NotFound();
+    private readonly Db _db;
+
+    public GetPaste(Db db) {
+        _db = db;
+    }
+
+    [HttpGet("/p/{id}")]
+    [HttpPost("/p/{id}")]
+    public async Task<ActionResult> Handle(string id) {
+        var paste = _db.Pastes.FirstOrDefault(c => c.PublicId == id.Trim());
+        if (paste is not {DeletedAt: null}) return NotFound();
         if (paste.PasswordHash.HasValue()) {
-            var password = context.Request.Method == "POST" ? context.Request.Form["password"].ToString() : "";
+            var password = Request.Method == "POST" ? Request.Form["password"].ToString() : "";
             if (password.IsNullOrWhiteSpace() || !PasswordHelper.Verify(password, paste.PasswordHash)) {
-                return Results.Content($"""
+                return Content($"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -36,15 +38,14 @@ public static class GetPaste
 
         if (paste.Singleton) {
             paste.DeletedAt = DateTime.UtcNow;
-            await db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
         }
 
         if (Tools.ShouldDeleteUpload(paste)) {
             paste.DeletedAt = DateTime.UtcNow;
-            await db.SaveChangesAsync();
+            await _db.SaveChangesAsync();
         }
 
-        Console.WriteLine(JsonSerializer.Serialize(paste));
-        return Results.Content(paste.Content, paste.MimeType, Encoding.UTF8);
+        return Content(paste.Content, paste.MimeType, Encoding.UTF8);
     }
 }

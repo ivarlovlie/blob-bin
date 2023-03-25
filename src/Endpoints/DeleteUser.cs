@@ -1,19 +1,26 @@
 namespace BlobBin.Endpoints;
 
-public static class DeleteUser
+public class DeleteUser : BaseEndpoint
 {
-    public static IResult Handle(HttpContext context, Db db) {
-        var user = db.Users.FirstOrDefault(c => c.Uid == context.Request.Form["uid"]);
+    private readonly Db _db;
+
+    public DeleteUser(Db db) {
+        _db = db;
+    }
+
+    [HttpDelete("/delete-user")]
+    public ActionResult Handle() {
+        var user = _db.Users.FirstOrDefault(c => c.Uid == Request.Form["uid"]);
         if (user == default) {
-            return Results.Empty;
+            return Ok();
         }
 
-        if (!PasswordHelper.Verify(context.Request.Form["password"], user.PasswordHash)) {
-            return Results.Unauthorized();
+        if (!PasswordHelper.Verify(Request.Form["password"], user.PasswordHash)) {
+            return Unauthorized();
         }
 
-        db.Users.Remove(user);
-        db.SaveChanges();
-        return Results.Ok();
+        _db.Users.Remove(user);
+        _db.SaveChanges();
+        return Ok();
     }
 }
