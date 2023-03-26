@@ -43,6 +43,7 @@ public class UploadEntityBase
     public string DeletionKey { get; set; }
     public string? Name { get; set; }
     public long Length { get; set; }
+    public bool IsProbablyEncrypted { get; set; }
 }
 
 public class Paste : UploadEntityBase

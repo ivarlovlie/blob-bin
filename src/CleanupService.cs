@@ -56,9 +56,8 @@ public class CleanupService : BackgroundService
             }
         }
 
-        // If the file has lived more than +7 days from when it should be automatically deleted, delete the file completely.
         foreach (var paste in pastes) {
-            if (DateTime.Compare(now, paste.DeletedAt?.AddDays(7) ?? DateTime.MinValue) > 0) {
+            if (paste.DeletedAt != default && DateTime.Compare(now, paste.DeletedAt?.AddDays(7) ?? DateTime.MinValue) > 0) {
                 db.Pastes.Remove(paste);
                 _logger.LogInformation("Deleted paste {pasteId} completely", paste.Id);
                 await db.SaveChangesAsync(stoppingToken);

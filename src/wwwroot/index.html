@@ -4,73 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <style>
-        html:not(.js) .js {
-            display: none;
-        }
-
-        body {
-            font-family: sans-serif;
-            background: white;
-            color: #333;
-        }
-
-        form {
-            width: 100%;
-            max-width: 300px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        main {
-            display: flex;
-            flex-direction: row;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        @media (max-width: 476px) {
-            form {
-                max-width: 100%;
-            }
-
-            main {
-                flex-direction: column-reverse;
-            }
-        }
-
-        .flex-end {
-            display: flex;
-            align-items: end;
-            flex-direction: column;
-        }
-
-        legend {
-            font-weight: 600;
-        }
-
-        textarea {
-            overflow-y: hidden;
-            min-height: calc(1.5em + .75rem + 2px);
-            min-width: 261px;
-        }
-
-        button {
-            background: #e9e9ed;
-            border: 1px solid #8f8f9d;
-            cursor: pointer;
-            width: fit-content;
-        }
-
-        button:active {
-            background: #d1d1d5;
-        }
-
-        #auth-dialog {
-            border: 1px solid #ccc;
-        }
-    </style>
+    <link rel="stylesheet" href="/index.css">
     <script>document.getElementsByTagName("html")[0].className += " js";</script>
     <title>Blobbin</title>
 </head>
@@ -78,11 +12,27 @@
 <h1>Blobbin</h1>
 <p>This is a web service you can upload files and texts to.</p>
 <p>The source is available at <a href="https://github.com/iv-ar/blob-bin">https://github.com/iv-ar/blob-bin</a>.</p>
-<p>
-    <b>Privacy policy:</b> When you upload a file, we store the contents, name and length unencrypted on our servers.
+<details>
+    <summary>Privacy policy</summary>
+    <br>
+    Everything, expect the content itself, is encrypted at rest.
+    You can choose to encrypt the content in your browser before uploading it.
+    <br>
     We don't store identifiers on your device, unless you log in.
-</p>
-<p><b>Terms of service:</b> Don't upload illegal content and don't crash our servers.</p>
+    <br>
+    When you upload something, we store the following data:
+    <ul>
+        <li>Your ip address</li>
+        <li>Content type</li>
+        <li>Content size</li>
+        <li>Content filename</li>
+        <li>Content</li>
+    </ul>
+</details>
+<details>
+    <summary>Terms of service</summary>
+    Don't upload illegal content and don't crash our servers.
+</details>
 <p>
     By uploading files you automatically acknowledge that you have read, understood and agreed to our terms of service
     and privacy policy. Contact: bb@oiee.no.
@@ -149,8 +99,10 @@
     </fieldset>
     <fieldset id="uploads" class="js" style="display: none;">
         <legend>My uploads</legend>
-        <p><a href="#" id="login-logout" title="Open login window" onclick="auth_prompt()">Log in</a> to administrate
-            your uploads</p>
+        <p>
+            <a href="#" id="login-logout" title="Open login window" onclick="auth_prompt()">Log in</a> to administrate
+            your uploads
+        </p>
         <div id="upload-list"></div>
     </fieldset>
 </main>
@@ -167,14 +119,20 @@
         </div>
     </form>
 </dialog>
+<script src="/index.js"></script>
 <script>
     const MAX_FILE_SIZE = 104_857_600;
+    let userEncryptionKey;
     document.addEventListener("DOMContentLoaded", () => {
         const fileInput = document.getElementById("file");
-        document.getElementById("file-form").addEventListener("submit", () => {
+        document.getElementById("file-form").addEventListener("submit", (e) => {
+            encryption_takeover_maybe(e);
             if (fileInput.files[0].size > 104_857_60) {
                 document.querySelector("#file-form .btn").innerText = "Uploading...";
             }
+        });
+        document.getElementById("text-form").addEventListener("submit", (e) => {
+            encryption_takeover_maybe(e);
         });
         fileInput.addEventListener("change", (e) => {
             if (e.target.files[0].size > MAX_FILE_SIZE) {
@@ -188,8 +146,37 @@
                 event.target.style.height = event.target.scrollHeight + "px";
             })
         });
+        document.querySelectorAll("[name='encrypt']").forEach(checkbox => checkbox.addEventListener("change", event => {
+            on_encrypt_checkbox_change(event)
+        }))
         initialise_uploads();
     });
+
+
+    function on_encrypt_checkbox_change(event) {
+        if (event.target.checked) userEncryptionKey = prompt("Provide encryption key, you'll need the exact key to decrypt")
+        else userEncryptionKey = ""
+        if (!userEncryptionKey) event.target.checked = false;
+    }
+
+    async function encryption_takeover_maybe(event) {
+        const formEntries = new FormData(event.target);
+        const shouldEncrypt = formEntries.get("encrypt") ?? "" === "on";
+        if (!shouldEncrypt) return;
+        if (!userEncryptionKey) throw new Error("No encryption key is specified");
+        event.preventDefault();
+        const content = formEntries.get("content") ?? "";
+        if (!content) return;
+        const venc = new VeryEncrypted(userEncryptionKey);
+        const encryptedContent = await venc.encrypt(new TextEncoder().encode(content))
+        if (!encryptedContent) return
+        formEntries.set("content", await arrayBufferToBase64(encryptedContent))
+        const response = await fetch(event.target.action, {
+            method: "post",
+            body: formEntries
+        })
+        alert(await response.text());
+    }
 
     const user = {
         login() {
@@ -205,7 +192,7 @@
         async verifyAsync(uid, pass) {
             return (await fetch("/user-verify", {
                 method: "post",
-                body: JSON.stringify(payload)
+                body: JSON.stringify({uid, pass})
             })).ok;
         }
     }

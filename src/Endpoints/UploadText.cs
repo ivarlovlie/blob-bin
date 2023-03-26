@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace BlobBin.Endpoints;
 
 public class UploadText : BaseEndpoint
@@ -16,25 +18,30 @@ public class UploadText : BaseEndpoint
 
         var paste = new Paste {
             IP = Request.Headers["X-Forwarded-For"].ToString(),
-            Singleton = Request.Form["singleton"] == "on",
-            AutoDeleteAfter = Request.Form["autoDeleteAfter"],
-            Length = Request.Form["content"].Count,
+            Singleton = Request.Form["singleton"].ToString() == "on",
+            IsProbablyEncrypted = Request.Form["encrypt"].ToString() == "on",
+            AutoDeleteAfter = Request.Form["autoDeleteAfter"].ToString(),
             Name = Request.Form["name"],
             MimeType = Request.Form["mime"],
             PublicId = Tools.GetUnusedPublicPasteId(_db),
-            Content = Request.Form["content"],
+            Content = Request.Form["content"].ToString(),
             DeletionKey = RandomString.Generate(6),
         };
-        if (Request.Form.ContainsKey("uid")) {
-            paste.CreatedBy = Request.Form["uid"].ToString().AsGuid();
+
+        paste.Length = paste.Content.Length;
+
+        var uid = Request.Form["uid"].ToString();
+        if (uid.HasValue()) {
+            paste.CreatedBy = uid.AsGuid();
         }
 
         if (paste.MimeType.IsNullOrWhiteSpace()) {
             paste.MimeType = "text/plain";
         }
 
-        if (Request.Form["password"].ToString().HasValue()) {
-            paste.PasswordHash = PasswordHelper.HashPassword(Request.Form["password"]);
+        var password = Request.Form["password"].ToString();
+        if (password.HasValue()) {
+            paste.PasswordHash = PasswordHelper.HashPassword(password);
         }
 
         _db.Pastes.Add(paste);
